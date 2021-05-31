@@ -50,16 +50,16 @@ export interface ControllerOptions {
 }
 
 export type HTTPMethod =
-  | "get"
-  | "delete"
-  | "head"
-  | "options"
-  | "post"
-  | "put"
-  | "patch"
-  | "purge"
-  | "link"
-  | "unlink";
+  | "GET"
+  | "DELETE"
+  | "HEAD"
+  | "OPTIONS"
+  | "POST"
+  | "PUT"
+  | "PATCH"
+  | "PURGE"
+  | "LINK"
+  | "UNLINK";
 
 export interface Api42MeCursusUser {
   id?: number;

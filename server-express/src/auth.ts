@@ -58,7 +58,7 @@ export const jwtResolver = (user: ModelCtor<UserInstance>): Handler => {
 
     // JWT 의 정보로부터 유저의 정보를 가져옵니다.
     console.log("# jwtResolver payload verify success");
-    console.log(payload);
+    console.dir(payload);
     next();
   });
 };

@@ -8,7 +8,7 @@ export class Controller {
     this.router = router;
   }
   get(path: string, handler: Handler, options?: ControllerOptions): void {
-    this.use("get", path, handler, options);
+    this.use("GET", path, handler, options);
   }
   use(
     method: HTTPMethod,
@@ -19,6 +19,8 @@ export class Controller {
     const structedHandler: Handler = (req, res, next) => {
       // 메소드가 다를 경우 아무것도 하지 않고 넘어갑니다.
       if (req.method !== method) {
+        console.log(method);
+        console.log(req.method);
         next();
         return;
       }

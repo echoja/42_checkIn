@@ -27,19 +27,9 @@ export const controllerInit = (
   controller: Controller,
   user: ModelCtor<UserInstance>
 ): void => {
-  /**
-   * LOGIN
-   */
-  controller.get("/api/user/login", (req, res, next) => {
-    console.log(req.cookies);
+  // controller.use("/api/user/login", (req, res, next) => {
 
-    const authorizationUri = client.authorizeURL({
-      redirect_uri: process.env.CLIENT_CALLBACK ?? "",
-      scope: "public",
-    });
-
-    res.redirect(authorizationUri);
-  });
+  // });
 
   /**
    * LOGIN CALLBACK
@@ -73,7 +63,7 @@ export const controllerInit = (
         return;
       }
       console.log("# user.controller.ts login callback access token success");
-      console.log(token_res.token);
+      console.dir(token_res.token);
 
       // 사용자 정보를 얻어옵니다.
       let userInfoRes: AxiosResponse;
@@ -101,8 +91,7 @@ export const controllerInit = (
         res.status(500).send("42 v2/me api conflicts");
         return;
       }
-      console.log("# user.controller.ts User Data Success");
-      console.dir(userData);
+      console.log(`# user.controller.ts User Data Success ${userData.login}`);
 
       // 사용자 정보가 DB에 없을 경우 추가합니다.
       const found = await user.findOne({
@@ -129,15 +118,37 @@ export const controllerInit = (
 
       const jwtToken = jwt.sign(payload, jwtSecret);
       console.log("# user.controller.ts login callback jwt Token success");
-      console.log(jwtToken);
+      console.dir(jwtToken);
 
       res.cookie("w_auth", jwtToken);
       res.status(200).json(token_res.token);
     })
   );
 
+  /**
+   * LOGIN
+   */
+  controller.get("/api/user/login", (req, res, next) => {
+    console.log("# cookies");
+    console.log(req.path);
+    console.dir(req.cookies);
+
+    const authorizationUri = client.authorizeURL({
+      redirect_uri: process.env.CLIENT_CALLBACK ?? "",
+      scope: "public",
+    });
+
+    res.redirect(authorizationUri);
+  });
+
   controller.get(
     "/api/user/status",
-    aw(async (req, res, next) => {})
+    aw(async (req, res, next) => {
+      const message = {
+        user: req.user,
+        authenticated: req.isAuthenticated
+      }
+      res.json(message);
+    })
   );
 };
