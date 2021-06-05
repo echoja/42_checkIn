@@ -1,52 +1,77 @@
-import { Model, Optional } from "sequelize/types";
+import { Model, ModelCtor, Optional, Sequelize } from "sequelize";
 
-export type { Controller } from "./controller";
+import type { Controller as ControllerType } from "./controller";
 
+export type Controller = ControllerType;
 
 export interface EntityInitArgs {
-  controller: Controller;
+  controller: ControllerType;
   sequelize: Sequelize;
 }
 
 /** entities */
+
+
 export type Gaepo = 0;
 export type Seocho = 1;
+
+/**
+ * Gaepo: 0
+ * Seocho: 1
+ */
 export type CardType = Gaepo | Seocho;
+
+export type ModelAttr = {
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+/**
+ * ModelCtor 에 사용할 Instance 타입을 정의합니다.
+ * `T`: Attribute 객체
+ * `U`: create 시, Attribute 에서 제외할 키 목록
+ */
+export type Inst<
+  T extends Record<string, unknown>,
+  U extends keyof T | undefined = undefined
+> = U extends undefined
+  ? Model<T, T> & T & ModelAttr
+  : Model<T, Optional<T, U>> & T & ModelAttr;
 
 export interface CardAttr {
   type: CardType;
-  cardId: number;
-  using: boolean;
-}
-
-export interface CardInstance extends Model<CardAttr, CardAttr>, CardAttr {
-  createdAt?: Date;
-  updatedAt?: Date;
+  cardId?: number;
+  using?: boolean;
 }
 
 export interface UserAttr {
+  _id: number;
   userId: number;
   userName: string;
   email: string;
-  cardType?: number;
-  cardUsing?: boolean;
-  cardId?: number;
+  card?: CardAttr;
+  cardId?: number | null;
   isAdmin?: boolean;
 }
+export type UserInstance = Inst<UserAttr, "_id">;
 
-export interface Inst<T> extends Model<T, T>, T {
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+export type CardInstance = Inst<CardAttr>;
 
-
-export interface UserInstance extends Model<UserAttr, UserAttr>, UserAttr {
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+export type UserRepository = ModelCtor<UserInstance>;
+export type CardRepository = ModelCtor<CardInstance>;
 
 export interface ControllerOptions {
+  /**
+   * 해당 요청이 사용자 정보를 필요로 하는지에 대한 여부를 설정합니다.
+   * jwtResolver 가 사전에 설정되어야 합니다.
+   */
   shouldBeAuthenticated?: boolean;
+  
+  /**
+   * 해당 요청이 관리자 전용인지의 여부를 설정합니다.
+   * jwtResolver 가 사전에 설정되어야 합니다.
+   */
+  shouldBeAdmin?: boolean;
 }
 
 export type HTTPMethod =
@@ -60,6 +85,8 @@ export type HTTPMethod =
   | "PURGE"
   | "LINK"
   | "UNLINK";
+export type HTTPMethodAll = "ALL";
+export type HTTPMethods = HTTPMethod[];
 
 export interface Api42MeCursusUser {
   id?: number;
@@ -179,7 +206,7 @@ declare module "simple-oauth2" {
 }
 
 export interface JWTPayload {
-  id: string;
+  id: number;
   email: string;
   access_token: string;
   refresh_token: string;
@@ -190,12 +217,13 @@ declare global {
   namespace Express {
     export interface Request {
       isAuthenticated?: boolean;
+      isAdmin?: boolean;
       user?: UserAttr;
     }
   }
   namespace NodeJS {
     export interface ProcessEnv {
-      NODE_ENV?: string;
+      NODE_ENV?: "production" | "development";
       DATABASE_HOST?: string;
       DATABASE_PORT?: string;
       DATABASE_USERNAME?: string;
@@ -210,6 +238,12 @@ declare global {
       DISCORD_GAEPO_PW?: string;
       DISCORD_SEOCHO_ID?: string;
       DISCORD_SEOCHO_PW?: string;
+      TEST_DATABASE_HOST?: string;
+      TEST_DATABASE_PORT?: string;
+      TEST_DATABASE_USERNAME?: string;
+      TEST_DATABASE_PASSWORD?: string;
+      TEST_DATABASE_NAME?: string;
+      TEST_DB_LOG?: string;
     }
   }
 }

@@ -1,84 +1,71 @@
 import { Controller } from "./controller";
-import { Handler, Router } from "express";
-import { ModelCtor, Sequelize } from "sequelize";
+import { Router } from "express";
+import { Sequelize } from "sequelize";
+import * as proxy from "express-http-proxy";
+import {
+  createRepository as createUserRepository,
+  initController as initUserController,
+  UserService,
+  associate as userAssociate,
+} from "@/entities/user";
+import {
+  createRepository as createCardRepository,
+  initController as initCardController,
+  CardService,
+} from "@/entities/card";
 
-import initUser from "./entities/user";
-import { jwtResolver, jwtSecret } from "./auth";
-import { JWTPayload, UserAttr, UserInstance } from "./type";
-import { aw, pick, safeJwtVerify } from "./util";
+import { client, jwtResolver } from "./auth";
+import axios from "axios";
 
+/** default router */
 export const router = Router();
-
 export const controller = new Controller(router);
 
+/** sequelize (DAO) */
 export const sequelize = new Sequelize({
   dialect: "mysql",
   database: process.env.DATABASE_NAME,
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   host: process.env.DATABASE_HOST,
+  port: parseInt(process.env.DATABASE_PORT ?? '3306', 10)
 });
 
-/** models */
-export const user = initUser({ controller, sequelize });
+/** repositories */
+export const userRepository = createUserRepository(sequelize, "Users");
+export const cardRepository = createCardRepository(sequelize, "Cards");
 
+/** associations (table relation) */
+userAssociate(userRepository, cardRepository);
+
+/** services */
+export const userService = new UserService(userRepository, cardRepository, client, axios.create());
+export const cardService = new CardService(userRepository, cardRepository);
+
+/** controllers */
+initUserController(controller, userService);
+initCardController(controller, cardService);
 
 /** middlewares */
-export const jwtResolverMiddleware = jwtResolver(user);
+export const jwtResolverMiddleware = jwtResolver(userRepository);
 
-// const modelGlobs = path.resolve(__dirname, "./entities/**/*.model.ts");
+export const syncDatabase = async (): Promise<void> => {
+  await sequelize.sync();
+};
 
-// export const sequelize = new Sequelize({
-//   dialect: "mysql",
-//   database: process.env.DATABASE_NAME,
-//   username: process.env.DATABASE_USERNAME,
-//   password: process.env.DATABASE_PASSWORD,
-//   host: process.env.DATAGASE_HOST,
+export const inspectDatabase = async (tableName: string): Promise<void> => {
+  try {
+    const described = await sequelize
+      .getQueryInterface()
+      .describeTable(tableName);
+    console.dir(described);
+  } catch (e) {
+    console.error(e);
+  }
+};
 
-//   models: [modelGlobs],
-//   modelMatch: (filename, member) => {
-//     // console.log(filename);
-//     // console.log(member);
-//     return (
-//       filename.substring(0, filename.indexOf(".model")) === member.toLowerCase()
-//     );
-//   },
-// });
-
-// sequelize
-//   .sync()
-//   .then((value) => {
-//     User.create({
-//       email: "abc",
-//       userId: 1,
-//       userName: "ho",
-//     })
-//       .then((value) => {
-//         console.log("save success");
-//         console.dir(value);
-//         User.findAll().then((value) => {
-//           console.log(`found: ${value.length}`);
-//         });
-//       })
-//       .catch((error) => {
-//         console.error("Test User making Failed");
-//         console.error(error);
-//       });
-//   })
-//   .catch((error) => {
-//     console.error("sync failed");
-//     console.error(error);
-//   });
-
-// db connection test
-// (async () => {
-//   try {
-//     await sequelize.authenticate();
-//     console.log("Connection has been established successfully.");
-//   } catch (error) {
-//     console.error("Unable to connect to the database:", error);
-//   }
-// })();
+if (process.env.NODE_ENV === "development")
+  router.use("/", proxy("localhost:4000"));
 
 export const prodPort = 3000;
 export const devPort = 29543;

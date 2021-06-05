@@ -1,6 +1,7 @@
 import { Handler } from "express";
 import { verify, VerifyOptions } from "jsonwebtoken";
 import { Asyncify, Entries } from "type-fest";
+import { JWTPayload } from "./type";
 
 /**
  * async 함수도 Express Handler 에 안전하게 사용할 수 있도록
@@ -21,7 +22,10 @@ export const aw =
  * @param obj 객체
  * @param keys 뽑을 key
  */
-export function pick<T, K extends keyof T>(obj: T, keys: ReadonlyArray<K>): Pick<T, K> {
+export function pick<T, K extends keyof T>(
+  obj: T,
+  keys: ReadonlyArray<K>
+): Pick<T, K> {
   const ret: any = {};
   keys.forEach((key) => {
     ret[key] = obj[key];
@@ -52,23 +56,28 @@ export function hasKeys<U extends { [K in T]?: unknown }, T extends string>(
  * @param options vefiry 시 넣어줄 옵션
  * @returns 안전하게 얻은 JWT Payload 객체
  */
-export function safeJwtVerify<T extends string>(
+export function safeJwtVerify<T extends keyof JWTPayload>(
   token: string,
   secret: string,
   keys: ReadonlyArray<T>,
   options?: VerifyOptions
-): { [K in T]: string } {
+): JWTPayload {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result: any = verify(token, secret, options); // unsafe
 
   // 결과가 string일 경우 예외를 일으킵니다.
   if (typeof result === "string")
     throw new Error("Jwt payload cannot be a string");
-  const obj: { [K in T]?: string } = {};
+  const obj: Partial<JWTPayload> = {
+    access_token: "",
+    email: "",
+    expires_at: "",
+    id: -1,
+    refresh_token: "",
+  };
   keys.forEach((key) => {
     obj[key] = result[key];
   });
-
   // 키를 검사합니다. keys 에 해당되는 키가 없을 경우 예외를 일으킵니다.
   if (!hasKeys(obj, keys))
     throw new Error(
@@ -78,3 +87,11 @@ export function safeJwtVerify<T extends string>(
     );
   return obj;
 }
+
+export const trueStrings = ["true", "True", "TRUE", "1", "yes", "Yes", "YES"];
+export const falseStrings = ["false", "False", "FALSE", "0", "no", "No", "NO"];
+
+export const isTrue = (s: string | undefined): boolean =>
+  typeof s === "string" && trueStrings.includes(s);
+export const isFalse = (s: string | undefined): boolean =>
+  typeof s === "string" && falseStrings.includes(s);

@@ -1,10 +1,16 @@
-import { EntityInitArgs, UserInstance } from "@/type";
-import { ModelCtor } from "sequelize/types";
-import { controllerInit } from "./user.controller";
-import modelDefiner from "./user.model";
+import type { EntityInitArgs, UserRepository } from "@/type";
 
-export default function (args: EntityInitArgs): ModelCtor<UserInstance> {
-  const model = modelDefiner(args.sequelize);
-  controllerInit(args.controller, model);
-  return model;
-}
+export { createRepository, associate } from "./user.repository";
+export { initController } from "./user.controller";
+export { UserService } from "./user.service";
+
+// export  from "./user.repository"
+
+// export default function (
+//   args: EntityInitArgs,
+//   tableName: string
+// ): UserRepository {
+//   const model = modelDefiner(args.sequelize, tableName);
+//   controllerInit(args.controller, model);
+//   return model;
+// }

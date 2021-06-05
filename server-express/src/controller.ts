@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Handler, Router } from "express";
-import { ControllerOptions, HTTPMethod } from "@/type";
+import { ControllerOptions, HTTPMethod, HTTPMethodAll, HTTPMethods } from "@/type";
 
 export class Controller {
   router: Router;
@@ -10,17 +10,21 @@ export class Controller {
   get(path: string, handler: Handler, options?: ControllerOptions): void {
     this.use("GET", path, handler, options);
   }
+  post(path: string, handler: Handler, options?: ControllerOptions): void {
+    this.use("POST", path, handler, options);
+  }
   use(
-    method: HTTPMethod,
+    method: HTTPMethod | HTTPMethodAll | HTTPMethods,
     path: string,
     handler: Handler,
     options?: ControllerOptions
   ): void {
     const structedHandler: Handler = (req, res, next) => {
       // 메소드가 다를 경우 아무것도 하지 않고 넘어갑니다.
-      if (req.method !== method) {
-        console.log(method);
-        console.log(req.method);
+      if (method !== "ALL" && 
+      ((Array.isArray(method) && !(req.method in method)) || req.method !== method)) {
+        // console.log(method);
+        // console.log(req.method);
         next();
         return;
       }
@@ -29,6 +33,13 @@ export class Controller {
         // shouldBeAuthenticated 설정이 되어 있으면서 인증되지 않은 상태라면
         // 401 에러를 일으킵니다.
         if (options.shouldBeAuthenticated && !req.isAuthenticated) {
+          res.status(401).send();
+          return;
+        }
+
+        // shouldBeAdmin 설정이 되어 있으면서 ADMIN이 아니라면
+        // 401 에러를 일으킵니다.
+        if (options.shouldBeAdmin && !req.isAdmin) {
           res.status(401).send();
           return;
         }
