@@ -109,7 +109,8 @@ export class UserService {
     // console.dir(jwtToken);
 
     res.cookie("w_auth", jwtToken);
-    res.status(200).json(token_res.token);
+    res.redirect("/submit");
+    // res.status(200).json(token_res.token);
   }
 
   async handleCheckIn(userDBId: number, cardId: number): Promise<void> {

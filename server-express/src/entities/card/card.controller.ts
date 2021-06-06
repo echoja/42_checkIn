@@ -38,13 +38,14 @@ export const initController = (
   controller.get(
     "/api/card/valid/:id",
     aw(async (req, res, next) => {
+      const idNum = parseInt(req.params.id, 10);
+      if (isNaN(idNum)) {
+        res.status(403).send("invalid card id");
+        return ;
+      }
       
-      // 카드 사용 상태를 확인합니다.
-      // 리턴값을 반환합니다.
-
-      res.json({
-        using: true, // 카드가 존재하지 않거나 사용 중일때 -> 나머지는 false
-      });
+      const back = await cardService.valid(idNum);
+      res.json(back);
     })
   );
 
@@ -52,10 +53,11 @@ export const initController = (
   controller.post(
     "/api/card/release/:id",
     aw(async (req, res, next) => {
+      // todo
       // JWT 토큰을 분석합니다.
       // 어드민인지 확인합니다. → 아니면 exception 반환
       // 카드의 사용 상태를 false로 변경합니다.
     })
   );
-  // todo
+  
 };

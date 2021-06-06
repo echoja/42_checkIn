@@ -16,18 +16,18 @@ describe("card.service", () => {
   const cardTableName = "card_service_spec_card";
   const userTableName = "card_service_spec_user";
   let sequelize: Sequelize;
-  let user: UserRepository;
-  let card: CardRepository;
+  let userRepository: UserRepository;
+  let cardRepository: CardRepository;
   let handler: express.Handler;
   let router: express.Router;
   let cardService: CardService;
 
   beforeAll(async () => {
     sequelize = await testDB();
-    user = createUserRepository(sequelize, userTableName);
-    card = createCardRepository(sequelize, cardTableName);
-    cardService = new CardService(user, card);
-    handler = jwtResolver(user);
+    userRepository = createUserRepository(sequelize, userTableName);
+    cardRepository = createCardRepository(sequelize, cardTableName);
+    cardService = new CardService(userRepository, cardRepository);
+    handler = jwtResolver(userRepository);
     router = express.Router();
     router.use(handler, (req, res, next) => {
       res.json({
@@ -45,22 +45,43 @@ describe("card.service", () => {
   });
 
   afterEach(async () => {
-    await card.destroy({ truncate: true });
+    await cardRepository.destroy({ truncate: true });
   });
 
   describe("create", () => {
     it("end - start - 1만큼 생성되어야 함", async () => {
       await cardService.create(SEOCHO, 0, 10);
-      const all = await card.findAll();
+      const all = await cardRepository.findAll();
       expect(all.length).toEqual(10);
     });
     it.each<[CardType]>([[SEOCHO], [GAEPO]])(
       "type 이 제대로 설정되어야 함: %d",
       async (type: CardType) => {
         await cardService.create(type, 0, 10);
-        const all = await card.findAll();
+        const all = await cardRepository.findAll();
         expect(all.every((card) => card.type === type)).toEqual(true);
       }
     );
   });
+  describe("valid", () => {
+    it("카드가 없다면 결과는 using: true 여야 함.", async () => {
+      const res = await cardService.valid(123);
+      expect(res.using).toEqual(true);
+    });
+    it("카드가 사용중이라면 결과는 using: true 여야 함.", async () => {
+      await cardRepository.create({type: SEOCHO, cardId: 123, using: true});
+      const res = await cardService.valid(123);
+      expect(res.using).toEqual(true);
+    });
+    it("카드의 using 필드가 null 이라면 결과는 using: true 여야 함.", async () => {
+      await cardRepository.create({type: SEOCHO, cardId: 123});
+      const res = await cardService.valid(123);
+      expect(res.using).toEqual(true);
+    });
+    it("카드가 있고 사용중이 아니라면 결과는 using: false 여야 함.", async () => {
+      await cardRepository.create({type: SEOCHO, cardId: 123, using: false});
+      const res = await cardService.valid(123);
+      expect(res.using).toEqual(false);
+    });
+  })
 });

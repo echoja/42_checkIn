@@ -28,7 +28,7 @@ export const sequelize = new Sequelize({
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   host: process.env.DATABASE_HOST,
-  port: parseInt(process.env.DATABASE_PORT ?? '3306', 10)
+  port: parseInt(process.env.DATABASE_PORT ?? "3306", 10),
 });
 
 /** repositories */
@@ -39,7 +39,12 @@ export const cardRepository = createCardRepository(sequelize, "Cards");
 userAssociate(userRepository, cardRepository);
 
 /** services */
-export const userService = new UserService(userRepository, cardRepository, client, axios.create());
+export const userService = new UserService(
+  userRepository,
+  cardRepository,
+  client,
+  axios.create()
+);
 export const cardService = new CardService(userRepository, cardRepository);
 
 /** controllers */
@@ -64,8 +69,13 @@ export const inspectDatabase = async (tableName: string): Promise<void> => {
   }
 };
 
+/** 프론트엔드 진입점 설정 */
 if (process.env.NODE_ENV === "development")
   router.use("/", proxy("localhost:4000"));
+else {
+  // todo: react 빌드된 경로로 express.static 경로 생성
+  // todo: react 프론트엔드가 SPA일 경우 connect-history-api-fall 설정
+}
 
 export const prodPort = 3000;
 export const devPort = 29543;

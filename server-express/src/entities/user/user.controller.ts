@@ -77,13 +77,14 @@ export const initController = (
   controller.post(
     "/api/user/checkOut",
     aw(async (req, res, next) => {
+      const id = req?.user?._id
+      if (typeof id !== 'number') {
+        res.status(500).send("wrong user id");
+        return;
+      }
+      await userService.handleCheckOut(id);
 
-      // await userService.handleCheckOut();
-      // 사용자의 카드정보를 가져옵니다.
-      // 카드를 반납처리합니다.
-      // (디스코드로 잔여 좌석 수를 알립니다.)
-      // 체크아웃 로그를 생성합니다.
-      res.send("success checkout");
+      res.status(200).send("success checkout");
     }),
     { shouldBeAuthenticated: true }
   );
@@ -94,12 +95,13 @@ export const initController = (
   controller.get(
     "/api/user/status",
     aw(async (req, res, next) => {
-      const message = {
-        user: req.user,
-        authenticated: req.isAuthenticated,
-      };
-      console.log("# status success");
-      console.dir(message);
+      // const message = {
+      //   user: req.user,
+      //   authenticated: req.isAuthenticated,
+      // };
+      // console.log("# status success");
+      // console.dir(message);
+      // todo
       res.json({
         login: "ryukim",
         card: null,

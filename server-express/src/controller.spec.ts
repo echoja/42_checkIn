@@ -16,43 +16,31 @@ describe("global controller", () => {
           controller.use(method, "/test", (req, res, next) => {
             res.status(200).send();
           });
+          app.use(router);
           const agent = supertest(app);
+          let res: supertest.Response | null;
           switch (method) {
             case "DELETE":
-              agent
-                .delete("/test")
-                .expect(200)
-                .end(() => {
-                  /* empty */
-                });
+              res = await agent
+                .delete("/test");
               break;
             case "GET":
-              agent
-                .get("/test")
-                .expect(200)
-                .end(() => {
-                  /* empty */
-                });
+              res = await agent
+                .get("/test");
               break;
             case "POST":
-              agent
-                .post("/test")
-                .expect(200)
-                .end(() => {
-                  /* empty */
-                });
+              res = await agent
+                .post("/test");
               break;
             case "PATCH":
-              agent
-                .patch("/test")
-                .expect(200)
-                .end(() => {
-                  /* empty */
-                });
+              res = await agent
+                .patch("/test");
               break;
             default:
+              res = null;
               break;
           }
+          expect(res?.status).toEqual(200);
         }
       );
       it("메소드가 일치하지 않을 시 404 떠야 함", async () => {
