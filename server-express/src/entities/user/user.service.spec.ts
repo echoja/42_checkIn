@@ -88,15 +88,25 @@ describe("user service", () => {
   });
 
   describe("handleLoginCallback (mocked Axios, client)", () => {
-    it("성공시 응답이 200 되어야 함.", async () => {
+    it("성공시 응답이 302(redirect) 이 되어야 함.", async () => {
       const userService = new UserService(user, card, clientMock, axiosMock);
       const app = express();
-      app.use("/", (req, res, next) => {
-        userService.handleLoginCallback("", res);
+      app.use("/", async (req, res, next) => {
+        await userService.handleLoginCallback("", res);
       });
       const agent = supertest(app);
       const res = await agent.post("/");
-      expect(res.status).toEqual(200);
+      expect(res.status).toEqual(302);
+    });
+    it("성공시 리디렉션의 지점은 /submit 이 되어야 함", async () => {
+      const userService = new UserService(user, card, clientMock, axiosMock);
+      const app = express();
+      app.use("/", async (req, res, next) => {
+        await userService.handleLoginCallback("", res);
+      });
+      const agent = supertest(app);
+      const res = await agent.post("/");
+      expect(res.headers["location"]).toEqual("/submit");
     });
     it("성공시 w_auth 쿠키가 설정되어야 함.", async () => {
       const userService = new UserService(user, card, clientMock, axiosMock);
@@ -304,7 +314,7 @@ describe("user service", () => {
     });
     it("사용자의 카드가 없을 경우 실패해야 함", async () => {
       let error = false;
-      let msg = '';
+      let msg = "";
       try {
         const userCreated = await user.create({
           email: "hi",
@@ -318,11 +328,11 @@ describe("user service", () => {
         msg = e.message;
       }
       expect(error).toEqual(true);
-      expect(msg).toEqual('User Has No Card');
+      expect(msg).toEqual("User Has No Card");
     });
     it("사용자가 없을 경우 실패해야 함", async () => {
       let error = false;
-      let msg = '';
+      let msg = "";
       try {
         const userService = new UserService(user, card, clientMock, axiosMock);
         await userService.handleCheckOut(123);
@@ -331,7 +341,7 @@ describe("user service", () => {
         msg = e.message;
       }
       expect(error).toEqual(true);
-      expect(msg).toEqual('User Not Found');
+      expect(msg).toEqual("User Not Found");
     });
   });
 });
